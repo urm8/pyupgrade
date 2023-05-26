@@ -35,6 +35,8 @@ class State(NamedTuple):
     settings: Settings
     from_imports: dict[str, set[str]]
     in_annotation: bool = False
+    class_def: ast.ClassDef = None
+    func_def: ast.FunctionDef = None
 
 
 AST_T = TypeVar('AST_T', bound=ast.AST)
@@ -81,8 +83,10 @@ def visit(
 
     nodes: list[tuple[State, ast.AST, ast.AST]] = [(initial_state, tree, tree)]
 
+    parent = None
     ret = collections.defaultdict(list)
     while nodes:
+        parent_ = parent
         state, node, parent = nodes.pop()
 
         tp = type(node)
@@ -105,6 +109,8 @@ def visit(
                 next_state = state._replace(in_annotation=True)
             else:
                 next_state = state
+            if isinstance(parent, ast.ClassDef):
+                next_state = state._replace(class_def=parent)
 
             if isinstance(value, ast.AST):
                 nodes.append((next_state, value, node))

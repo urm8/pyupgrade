@@ -17,6 +17,7 @@ PEP585_BUILTINS = frozenset((
 ))
 
 
+
 def _should_rewrite(state: State) -> bool:
     return (
         state.settings.min_version >= (3, 9) or (
@@ -39,6 +40,8 @@ def visit_Attribute(
             node.value.id == 'typing' and
             node.attr in PEP585_BUILTINS
     ):
+        if state.class_def and any(ast.walk(node is class_node for class_node in state.class_def)):
+            print('kek')
         func = functools.partial(
             replace_name,
             name=node.attr,
@@ -58,6 +61,8 @@ def visit_Name(
             node.id in state.from_imports['typing'] and
             node.id in PEP585_BUILTINS
     ):
+        if state.class_def and any(node is class_node for class_node in ast.walk(state.class_def)) and any(node.id.lower() == getattr(field,'name', None) for field in ast.iter_child_nodes(state.class_def)):
+            return
         func = functools.partial(
             replace_name,
             name=node.id,
